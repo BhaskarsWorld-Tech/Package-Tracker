@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { LineChart as LineChartIcon } from "lucide-react";
 
 export type TrendPoint = { label: string; value: number };
 
@@ -23,8 +24,9 @@ export default function TrendChart({
 }) {
   if (data.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center text-sm text-neutral-400">
-        Not enough data yet.
+      <div className="flex h-64 flex-col items-center justify-center gap-2 text-neutral-300">
+        <LineChartIcon size={28} />
+        <p className="text-sm text-neutral-400">Not enough data yet.</p>
       </div>
     );
   }

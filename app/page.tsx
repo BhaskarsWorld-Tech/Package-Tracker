@@ -10,6 +10,7 @@ import {
   Phone,
   Mail,
   TrendingUp,
+  Truck,
 } from "lucide-react";
 import type { Lead, Package, Payment } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
@@ -169,7 +170,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
         <StatCard
           label="Total Packages"
           value={loading ? "—" : packages.length}
@@ -205,6 +206,13 @@ export default function Dashboard() {
           icon={TrendingUp}
           accent="indigo"
         />
+        <StatCard
+          label="Outstanding"
+          value={loading ? "—" : formatCurrencyTotals(outstandingTotals)}
+          href="/payments"
+          icon={Wallet}
+          accent="amber"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -221,9 +229,12 @@ export default function Dashboard() {
               Top Carrier Performance
             </h2>
             {carrierStats.length === 0 ? (
-              <p className="py-6 text-center text-sm text-neutral-400">
-                Add a carrier to your packages to see performance here.
-              </p>
+              <div className="flex flex-col items-center gap-2 py-10 text-neutral-300">
+                <Truck size={28} />
+                <p className="text-sm text-neutral-400">
+                  Add a carrier to your packages to see performance here.
+                </p>
+              </div>
             ) : (
               <table className="w-full text-sm">
                 <thead className="text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
@@ -250,30 +261,6 @@ export default function Dashboard() {
                 </tbody>
               </table>
             )}
-          </section>
-
-          <section>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-neutral-900">
-                Outstanding Payments
-              </h2>
-              <Link
-                href="/payments"
-                className="inline-flex items-center gap-1 text-sm font-medium text-accent-600 hover:text-accent-700"
-              >
-                View all <ArrowRight size={14} />
-              </Link>
-            </div>
-            <div className="rounded-2xl border border-neutral-200/80 bg-white p-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                  <Wallet size={17} strokeWidth={2.25} />
-                </div>
-                <span className="text-2xl font-semibold text-neutral-900">
-                  {loading ? "—" : formatCurrencyTotals(outstandingTotals)}
-                </span>
-              </div>
-            </div>
           </section>
         </div>
 
