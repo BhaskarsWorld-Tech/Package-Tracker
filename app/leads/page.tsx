@@ -12,6 +12,7 @@ const STATUSES = ["New", "Contacted", "Quoted", "Converted", "Lost"];
 const ROUTES = ["India → USA", "USA → India"];
 
 const emptyForm = {
+  date: new Date().toISOString().slice(0, 10),
   customerName: "",
   phone: "",
   email: "",
@@ -55,13 +56,14 @@ export default function LeadsPage() {
 
   function openNewForm() {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, date: new Date().toISOString().slice(0, 10) });
     setShowForm(true);
   }
 
   function openEditForm(lead: Lead) {
     setEditingId(lead.id);
     setForm({
+      date: lead.date,
       customerName: lead.customerName,
       phone: lead.phone,
       email: lead.email,
@@ -157,12 +159,22 @@ export default function LeadsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                />
+              </div>
+              <div>
                 <Label>Phone</Label>
                 <Input
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Email</Label>
                 <Input
@@ -171,8 +183,6 @@ export default function LeadsPage() {
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Route</Label>
                 <Select
@@ -184,17 +194,17 @@ export default function LeadsPage() {
                   ))}
                 </Select>
               </div>
-              <div>
-                <Label>Status</Label>
-                <Select
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                >
-                  {STATUSES.map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </Select>
-              </div>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
