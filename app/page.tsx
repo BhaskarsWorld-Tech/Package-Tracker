@@ -249,8 +249,8 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="space-y-6 xl:col-span-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:items-stretch">
+        <div className="flex flex-col gap-6 xl:col-span-2">
           <section className="rounded-2xl border border-neutral-200/80 bg-white p-5">
             <h2 className="mb-4 text-base font-semibold text-neutral-900">
               Shipments Overview
@@ -258,7 +258,7 @@ export default function Dashboard() {
             <TrendChart data={shipmentsOverTime} color="#4f46e5" />
           </section>
 
-          <section className="rounded-2xl border border-neutral-200/80 bg-white p-5">
+          <section className="flex flex-1 flex-col rounded-2xl border border-neutral-200/80 bg-white p-5">
             <h2 className="mb-4 text-base font-semibold text-neutral-900">
               Top Carrier Performance
             </h2>
@@ -298,7 +298,7 @@ export default function Dashboard() {
           </section>
         </div>
 
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           <section className="rounded-2xl border border-neutral-200/80 bg-white p-5">
             <h2 className="mb-4 text-base font-semibold text-neutral-900">
               Shipments by Status
@@ -306,7 +306,7 @@ export default function Dashboard() {
             <StatusDonutChart data={statusDonutData} />
           </section>
 
-          <section className="rounded-2xl border border-neutral-200/80 bg-white">
+          <section className="flex flex-1 flex-col rounded-2xl border border-neutral-200/80 bg-white">
             <div className="flex items-center justify-between px-5 pt-5">
               <h2 className="text-base font-semibold text-neutral-900">Leads</h2>
               <Link
@@ -395,27 +395,39 @@ export default function Dashboard() {
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-1 lg:grid-cols-1">
-            <div className="rounded-2xl bg-gradient-to-br from-accent-600 to-accent-700 p-5 text-white">
+            <Link
+              href="/payments"
+              className="rounded-2xl bg-gradient-to-br from-accent-600 to-accent-700 p-5 text-white transition-transform hover:scale-[1.02]"
+            >
               <div className="text-sm text-white/70">Total Revenue</div>
               <div className="mt-1 text-2xl font-semibold">
                 {loading ? "—" : formatCurrencyTotals(totalRevenueTotals)}
               </div>
-            </div>
-            <div className="rounded-2xl border border-neutral-200/80 bg-white p-5">
+            </Link>
+            <Link
+              href="/payments"
+              className="rounded-2xl border border-neutral-200/80 bg-white p-5 transition-all hover:border-neutral-300 hover:shadow-md hover:shadow-neutral-200/50"
+            >
               <div className="text-sm text-neutral-500">Outstanding</div>
               <div className="mt-1 text-2xl font-semibold text-neutral-900">
                 {loading ? "—" : formatCurrencyTotals(outstandingTotals)}
               </div>
-            </div>
-            <div className="rounded-2xl border border-neutral-200/80 bg-white p-5">
+            </Link>
+            <Link
+              href="/payments"
+              className="rounded-2xl border border-neutral-200/80 bg-white p-5 transition-all hover:border-neutral-300 hover:shadow-md hover:shadow-neutral-200/50"
+            >
               <div className="text-sm text-neutral-500">Pending</div>
               <div className="mt-1 text-2xl font-semibold text-neutral-900">
                 {loading ? "—" : formatCurrencyTotals(pendingTotals)}
               </div>
-            </div>
+            </Link>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 lg:col-span-2">
+          <Link
+            href="/payments"
+            className="rounded-2xl border border-neutral-200/80 bg-white p-5 transition-all hover:border-neutral-300 hover:shadow-md hover:shadow-neutral-200/50 lg:col-span-2"
+          >
             <h3 className="mb-2 text-sm font-semibold text-neutral-900">
               Recent Transactions
             </h3>
@@ -442,9 +454,12 @@ export default function Dashboard() {
                 </li>
               ))}
             </ul>
-          </div>
+          </Link>
 
-          <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 lg:col-span-1">
+          <Link
+            href="/payments"
+            className="rounded-2xl border border-neutral-200/80 bg-white p-5 transition-all hover:border-neutral-300 hover:shadow-md hover:shadow-neutral-200/50 lg:col-span-1"
+          >
             <h3 className="mb-2 text-sm font-semibold text-neutral-900">
               Revenue Trend {revenueTrend.length > 0 && `(${primaryCurrency})`}
             </h3>
@@ -453,7 +468,7 @@ export default function Dashboard() {
               color="#10b981"
               valuePrefix={primaryCurrency === "INR" ? "₹" : "$"}
             />
-          </div>
+          </Link>
         </div>
       </section>
     </div>
