@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Wallet } from "lucide-react";
+import { Plus, Trash2, Wallet, TrendingUp, Clock } from "lucide-react";
 import type { Payment, Package } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import ErrorBanner from "@/components/ErrorBanner";
 import Modal from "@/components/Modal";
+import StatCard from "@/components/StatCard";
+import TrendChart from "@/components/TrendChart";
 import { Input, Label, Select, Textarea } from "@/components/FormField";
 import { formatMoney, sumByCurrency, formatCurrencyTotals } from "@/lib/money";
+import { shortDate } from "@/lib/date";
 
 const STATUSES = ["Pending", "Paid", "Partial", "Refunded"];
 const METHODS = ["Cash", "Bank Transfer", "UPI", "Zelle", "Card", "Other"];
 const CURRENCIES = ["USD", "INR"];
+const TABS = ["Overview", "Transactions"] as const;
 
 const emptyForm = {
   packageId: "",
@@ -32,6 +36,7 @@ export default function PaymentsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
 
   async function load() {
     setLoading(true);
@@ -91,6 +96,40 @@ export default function PaymentsPage() {
           .map((b) => ({ amount: String(b.remaining), currency: b.pkg.currency }))
       ),
     [balances]
+  );
+
+  const paidPayments = useMemo(
+    () => payments.filter((p) => p.status === "Paid"),
+    [payments]
+  );
+  const pendingPayments = useMemo(
+    () => payments.filter((p) => p.status === "Pending" || p.status === "Partial"),
+    [payments]
+  );
+  const totalRevenueTotals = sumByCurrency(paidPayments);
+  const pendingTotals = sumByCurrency(pendingPayments);
+
+  const primaryCurrency = useMemo(() => {
+    const counts = sumByCurrency(payments.map((p) => ({ ...p, amount: "1" })));
+    const entries = Object.entries(counts);
+    return entries.sort((a, b) => b[1] - a[1])[0]?.[0] ?? "USD";
+  }, [payments]);
+
+  const revenueTrend = useMemo(() => {
+    const byDate = new Map<string, number>();
+    paidPayments
+      .filter((p) => p.currency === primaryCurrency)
+      .forEach((p) => {
+        byDate.set(p.date, (byDate.get(p.date) ?? 0) + (parseFloat(p.amount) || 0));
+      });
+    return [...byDate.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, amount]) => ({ label: shortDate(date), value: amount }));
+  }, [paidPayments, primaryCurrency]);
+
+  const recentPayments = useMemo(
+    () => [...payments].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
+    [payments]
   );
 
   function selectPackage(packageId: string) {
@@ -269,140 +308,230 @@ export default function PaymentsPage() {
         </Modal>
       )}
 
-      {balances.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-base font-semibold text-neutral-900">
-            Balances by Shipment
-          </h2>
-          <div className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-neutral-50/70 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
-                  <tr>
-                    <th className="px-5 py-3">Customer</th>
-                    <th className="px-5 py-3">Shipment</th>
-                    <th className="px-5 py-3">Due</th>
-                    <th className="px-5 py-3">Settled</th>
-                    <th className="px-5 py-3">Remaining</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100">
-                  {balances.map(({ pkg, due, paid, remaining }) => (
-                    <tr key={pkg.id} className="hover:bg-neutral-50/60 transition-colors">
-                      <td className="px-5 py-3 font-medium text-neutral-900">
-                        {pkg.customerName}
-                      </td>
-                      <td className="px-5 py-3 text-neutral-500">
-                        {pkg.trackingNumber || pkg.id.slice(0, 8)}
-                      </td>
-                      <td className="px-5 py-3 text-neutral-700">
-                        {formatMoney(due, pkg.currency)}
-                      </td>
-                      <td className="px-5 py-3 text-neutral-700">
-                        {formatMoney(paid, pkg.currency)}
-                      </td>
-                      <td className="px-5 py-3">
-                        {remaining <= 0 ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                            Settled
-                          </span>
-                        ) : (
-                          <span className="font-medium text-amber-600">
-                            {formatMoney(remaining, pkg.currency)}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-      )}
+      <div className="flex gap-1 border-b border-neutral-200">
+        {TABS.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+              tab === t
+                ? "border-b-2 border-accent-600 text-accent-700"
+                : "text-neutral-500 hover:text-neutral-900"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
 
-      <section>
-        {balances.length > 0 && (
-          <h2 className="mb-3 text-base font-semibold text-neutral-900">
-            All Payments
-          </h2>
-        )}
-        <div className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-neutral-50/70 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
-                <tr>
-                  <th className="px-5 py-3">Date</th>
-                  <th className="px-5 py-3">Customer</th>
-                  <th className="px-5 py-3">Amount</th>
-                  <th className="px-5 py-3">Method</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Notes</th>
-                  <th className="px-5 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {loading && (
-                  <tr>
-                    <td className="px-5 py-8 text-center text-neutral-400" colSpan={7}>
-                      Loading…
-                    </td>
-                  </tr>
+      {tab === "Overview" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard
+              label="Total Revenue"
+              value={loading ? "—" : formatCurrencyTotals(totalRevenueTotals)}
+              href="/payments"
+              icon={TrendingUp}
+              accent="emerald"
+            />
+            <StatCard
+              label="Outstanding"
+              value={loading ? "—" : formatCurrencyTotals(outstandingTotals)}
+              href="/payments"
+              icon={Wallet}
+              accent="amber"
+            />
+            <StatCard
+              label="Pending"
+              value={loading ? "—" : formatCurrencyTotals(pendingTotals)}
+              href="/payments"
+              icon={Clock}
+              accent="blue"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <section className="rounded-2xl border border-neutral-200/80 bg-white p-5 lg:col-span-2">
+              <h2 className="mb-4 text-base font-semibold text-neutral-900">
+                Revenue Trend {revenueTrend.length > 0 && `(${primaryCurrency})`}
+              </h2>
+              <TrendChart
+                data={revenueTrend}
+                color="#10b981"
+                valuePrefix={primaryCurrency === "INR" ? "₹" : "$"}
+              />
+            </section>
+
+            <section className="rounded-2xl border border-neutral-200/80 bg-white p-5">
+              <h2 className="mb-2 text-base font-semibold text-neutral-900">
+                Recent Transactions
+              </h2>
+              <ul className="divide-y divide-neutral-100">
+                {recentPayments.length === 0 && (
+                  <li className="py-8 text-center text-sm text-neutral-400">
+                    No payments yet.
+                  </li>
                 )}
-                {!loading && payments.length === 0 && (
-                  <tr>
-                    <td colSpan={7}>
-                      <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
-                        <Wallet className="text-neutral-300" size={28} />
-                        <p className="text-sm text-neutral-400">No payments yet.</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                {payments.map((p) => (
-                  <tr key={p.id} className="group hover:bg-neutral-50/60 transition-colors">
-                    <td className="px-5 py-3 whitespace-nowrap text-neutral-500">
-                      {p.date}
-                    </td>
-                    <td className="px-5 py-3 font-medium text-neutral-900">
-                      {p.customerName}
-                    </td>
-                    <td className="px-5 py-3 text-neutral-700">
-                      {formatMoney(parseFloat(p.amount) || 0, p.currency)}
-                    </td>
-                    <td className="px-5 py-3 text-neutral-600">{p.method}</td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={p.status} />
-                        <select
-                          value={p.status}
-                          onChange={(e) => updateStatus(p.id, e.target.value)}
-                          className="cursor-pointer rounded-md border-0 bg-transparent text-xs text-neutral-400 opacity-0 outline-none group-hover:opacity-100 focus:opacity-100"
-                        >
-                          {STATUSES.map((s) => (
-                            <option key={s}>{s}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </td>
-                    <td className="max-w-xs truncate px-5 py-3 text-neutral-500">
-                      {p.notes}
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      <button
-                        onClick={() => remove(p.id)}
-                        className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
+                {recentPayments.map((p) => (
+                  <li key={p.id} className="flex items-center justify-between py-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-neutral-900">
+                        {p.customerName}
+                      </p>
+                      <p className="text-xs text-neutral-400">{p.date}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-neutral-900">
+                        {formatMoney(parseFloat(p.amount) || 0, p.currency)}
+                      </p>
+                      <StatusBadge status={p.status} />
+                    </div>
+                  </li>
                 ))}
-              </tbody>
-            </table>
+              </ul>
+            </section>
           </div>
         </div>
-      </section>
+      )}
+
+      {tab === "Transactions" && (
+        <div className="space-y-6">
+          {balances.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-base font-semibold text-neutral-900">
+                Balances by Shipment
+              </h2>
+              <div className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-neutral-50/70 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
+                      <tr>
+                        <th className="px-5 py-3">Customer</th>
+                        <th className="px-5 py-3">Shipment</th>
+                        <th className="px-5 py-3">Due</th>
+                        <th className="px-5 py-3">Settled</th>
+                        <th className="px-5 py-3">Remaining</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100">
+                      {balances.map(({ pkg, due, paid, remaining }) => (
+                        <tr key={pkg.id} className="hover:bg-neutral-50/60 transition-colors">
+                          <td className="px-5 py-3 font-medium text-neutral-900">
+                            {pkg.customerName}
+                          </td>
+                          <td className="px-5 py-3 text-neutral-500">
+                            {pkg.trackingNumber || pkg.id.slice(0, 8)}
+                          </td>
+                          <td className="px-5 py-3 text-neutral-700">
+                            {formatMoney(due, pkg.currency)}
+                          </td>
+                          <td className="px-5 py-3 text-neutral-700">
+                            {formatMoney(paid, pkg.currency)}
+                          </td>
+                          <td className="px-5 py-3">
+                            {remaining <= 0 ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                Settled
+                              </span>
+                            ) : (
+                              <span className="font-medium text-amber-600">
+                                {formatMoney(remaining, pkg.currency)}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <section>
+            {balances.length > 0 && (
+              <h2 className="mb-3 text-base font-semibold text-neutral-900">
+                All Payments
+              </h2>
+            )}
+            <div className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-neutral-50/70 text-left text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    <tr>
+                      <th className="px-5 py-3">Date</th>
+                      <th className="px-5 py-3">Customer</th>
+                      <th className="px-5 py-3">Amount</th>
+                      <th className="px-5 py-3">Method</th>
+                      <th className="px-5 py-3">Status</th>
+                      <th className="px-5 py-3">Notes</th>
+                      <th className="px-5 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {loading && (
+                      <tr>
+                        <td className="px-5 py-8 text-center text-neutral-400" colSpan={7}>
+                          Loading…
+                        </td>
+                      </tr>
+                    )}
+                    {!loading && payments.length === 0 && (
+                      <tr>
+                        <td colSpan={7}>
+                          <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
+                            <Wallet className="text-neutral-300" size={28} />
+                            <p className="text-sm text-neutral-400">No payments yet.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    {payments.map((p) => (
+                      <tr key={p.id} className="group hover:bg-neutral-50/60 transition-colors">
+                        <td className="px-5 py-3 whitespace-nowrap text-neutral-500">
+                          {p.date}
+                        </td>
+                        <td className="px-5 py-3 font-medium text-neutral-900">
+                          {p.customerName}
+                        </td>
+                        <td className="px-5 py-3 text-neutral-700">
+                          {formatMoney(parseFloat(p.amount) || 0, p.currency)}
+                        </td>
+                        <td className="px-5 py-3 text-neutral-600">{p.method}</td>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2">
+                            <StatusBadge status={p.status} />
+                            <select
+                              value={p.status}
+                              onChange={(e) => updateStatus(p.id, e.target.value)}
+                              className="cursor-pointer rounded-md border-0 bg-transparent text-xs text-neutral-400 opacity-0 outline-none group-hover:opacity-100 focus:opacity-100"
+                            >
+                              {STATUSES.map((s) => (
+                                <option key={s}>{s}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+                        <td className="max-w-xs truncate px-5 py-3 text-neutral-500">
+                          {p.notes}
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <button
+                            onClick={() => remove(p.id)}
+                            className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

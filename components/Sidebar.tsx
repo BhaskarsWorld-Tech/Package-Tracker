@@ -15,16 +15,19 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-neutral-200/80 bg-white">
-      <div className="flex items-center gap-2.5 px-6 h-16 border-b border-neutral-200/80">
+    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-[#150f3d] text-white">
+      <div className="flex items-center gap-2.5 px-6 h-16 border-b border-white/10">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent-500 to-accent-700 text-white shadow-sm shadow-accent-500/30">
           <Ship size={17} strokeWidth={2.25} />
         </div>
-        <span className="font-semibold text-neutral-900 tracking-tight">
-          Package Tracker
-        </span>
+        <span className="font-semibold tracking-tight">Package Tracker</span>
       </div>
-      <nav className="flex-1 px-3 py-5 space-y-1">
+      <div className="px-6 pt-5 pb-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-white/35">
+          Main
+        </p>
+      </div>
+      <nav className="flex-1 px-3 space-y-1">
         {NAV.map((item) => {
           const active =
             item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -33,24 +36,20 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 active
-                  ? "bg-accent-50 text-accent-700"
-                  : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+                  ? "bg-accent-600 text-white shadow-sm shadow-accent-900/30"
+                  : "text-white/60 hover:bg-white/5 hover:text-white"
               }`}
             >
-              <Icon
-                size={17}
-                strokeWidth={2}
-                className={active ? "text-accent-600" : "text-neutral-400 group-hover:text-neutral-600"}
-              />
+              <Icon size={17} strokeWidth={2} />
               {item.label}
             </Link>
           );
         })}
       </nav>
-      <div className="px-6 py-4 border-t border-neutral-200/80">
-        <p className="text-xs text-neutral-400">India ⇄ USA shipments</p>
+      <div className="px-6 py-4 border-t border-white/10">
+        <p className="text-xs text-white/35">India ⇄ USA shipments</p>
       </div>
     </aside>
   );
