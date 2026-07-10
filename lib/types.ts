@@ -53,3 +53,19 @@ export type Payment = {
   date: string;
   notes: string;
 };
+
+export type CourierPayment = {
+  _row: number;
+  id: string;
+  packageId: string;
+  customerName: string;
+  paidContactName: string;
+  paidContactNumber: string;
+  paidBy: string;
+  total: string;
+  currency: string;
+  paymentSource: string;
+  customerPaymentStatus: "Pending" | "Paid" | "Partial" | string;
+  date: string;
+  notes: string;
+};

@@ -63,6 +63,20 @@ export const SHEETS = {
     "date",
     "notes",
   ],
+  CourierPayments: [
+    "id",
+    "packageId",
+    "customerName",
+    "paidContactName",
+    "paidContactNumber",
+    "paidBy",
+    "total",
+    "currency",
+    "paymentSource",
+    "customerPaymentStatus",
+    "date",
+    "notes",
+  ],
 } as const;
 
 export type SheetName = keyof typeof SHEETS;
@@ -84,7 +98,23 @@ function objectToRow<T extends SheetName>(
   return cols.map((col) => obj[col] ?? "");
 }
 
+async function ensureSheetTab(sheet: SheetName) {
+  const meta = await sheetsFetch("");
+  const exists = meta.sheets?.some(
+    (s: { properties?: { title?: string } }) => s.properties?.title === sheet
+  );
+  if (!exists) {
+    await sheetsFetch(":batchUpdate", {
+      method: "POST",
+      body: JSON.stringify({
+        requests: [{ addSheet: { properties: { title: sheet } } }],
+      }),
+    });
+  }
+}
+
 export async function ensureHeaders(sheet: SheetName) {
+  await ensureSheetTab(sheet);
   const data = await sheetsFetch(
     `/values/${encodeURIComponent(`${sheet}!1:1`)}`
   );
@@ -108,6 +138,7 @@ export async function ensureHeaders(sheet: SheetName) {
 }
 
 export async function listRows(sheet: SheetName) {
+  await ensureSheetTab(sheet);
   const data = await sheetsFetch(
     `/values/${encodeURIComponent(`${sheet}!A2:Z`)}`
   );

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Package, CreditCard, Ship } from "lucide-react";
+import { LayoutDashboard, Users, Package, CreditCard, Truck, Ship } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/leads", label: "Leads", icon: Users },
   { href: "/packages", label: "Packages", icon: Package },
   { href: "/payments", label: "Payments", icon: CreditCard },
+  { href: "/courier-payments", label: "Courier Payments", icon: Truck },
 ];
 
 export default function MobileNav() {
