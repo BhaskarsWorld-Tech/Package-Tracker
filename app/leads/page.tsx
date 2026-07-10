@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, UserPlus } from "lucide-react";
+import { Plus, Trash2, Pencil, UserPlus } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import ErrorBanner from "@/components/ErrorBanner";
@@ -29,6 +29,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
@@ -52,15 +53,47 @@ export default function LeadsPage() {
     load();
   }, []);
 
+  function openNewForm() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setShowForm(true);
+  }
+
+  function openEditForm(lead: Lead) {
+    setEditingId(lead.id);
+    setForm({
+      customerName: lead.customerName,
+      phone: lead.phone,
+      email: lead.email,
+      route: lead.route,
+      status: lead.status,
+      notes: lead.notes,
+      fromAddress: lead.fromAddress,
+      shipToAddress: lead.shipToAddress,
+      shipToContactName: lead.shipToContactName,
+      shipToContactPhone: lead.shipToContactPhone,
+    });
+    setShowForm(true);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await fetch("/api/leads", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+    if (editingId) {
+      await fetch(`/api/leads/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+    } else {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+    }
     setForm(emptyForm);
+    setEditingId(null);
     setShowForm(false);
     setSaving(false);
     load();
@@ -97,7 +130,7 @@ export default function LeadsPage() {
           </p>
         </div>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={openNewForm}
           className="inline-flex items-center gap-1.5 rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-accent-600/20 transition-colors hover:bg-accent-700"
         >
           <Plus size={16} /> New Lead
@@ -105,7 +138,13 @@ export default function LeadsPage() {
       </div>
 
       {showForm && (
-        <Modal title="New Lead" onClose={() => setShowForm(false)}>
+        <Modal
+          title={editingId ? "Edit Lead" : "New Lead"}
+          onClose={() => {
+            setShowForm(false);
+            setEditingId(null);
+          }}
+        >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label>Customer name</Label>
@@ -206,7 +245,10 @@ export default function LeadsPage() {
             <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingId(null);
+                }}
                 className="rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100"
               >
                 Cancel
@@ -216,7 +258,7 @@ export default function LeadsPage() {
                 disabled={saving}
                 className="rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-accent-600/20 hover:bg-accent-700 disabled:opacity-50"
               >
-                {saving ? "Saving…" : "Save Lead"}
+                {saving ? "Saving…" : editingId ? "Save Changes" : "Save Lead"}
               </button>
             </div>
           </form>
@@ -292,12 +334,20 @@ export default function LeadsPage() {
                     </div>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <button
-                      onClick={() => remove(lead.id)}
-                      className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => openEditForm(lead)}
+                        className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-accent-50 hover:text-accent-600 group-hover:opacity-100"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        onClick={() => remove(lead.id)}
+                        className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
