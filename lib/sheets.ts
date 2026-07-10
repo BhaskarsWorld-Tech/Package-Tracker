@@ -98,11 +98,35 @@ function objectToRow<T extends SheetName>(
   return cols.map((col) => obj[col] ?? "");
 }
 
+// Spreadsheet metadata (which tabs exist) rarely changes, so cache it for
+// the lifetime of the warm instance instead of re-fetching on every read —
+// each fetch counts against Google's per-minute read quota, and doubling
+// every list/update/delete call with a metadata round-trip exhausts it fast.
+type SheetMeta = { sheets?: { properties?: { title?: string; sheetId?: number } }[] };
+let sheetMetaCache: SheetMeta | null = null;
+
+async function getSheetMeta(forceRefresh = false): Promise<SheetMeta> {
+  if (!sheetMetaCache || forceRefresh) {
+    sheetMetaCache = await sheetsFetch("");
+  }
+  return sheetMetaCache as SheetMeta;
+}
+
+async function getSheetId(sheet: SheetName) {
+  const meta = await getSheetMeta();
+  return meta.sheets?.find((s) => s.properties?.title === sheet)?.properties
+    ?.sheetId;
+}
+
 async function ensureSheetTab(sheet: SheetName) {
-  const meta = await sheetsFetch("");
-  const exists = meta.sheets?.some(
-    (s: { properties?: { title?: string } }) => s.properties?.title === sheet
-  );
+  let meta = await getSheetMeta();
+  let exists = meta.sheets?.some((s) => s.properties?.title === sheet);
+  if (!exists) {
+    // Cache may just be stale (created by another request) — refresh once
+    // before assuming it's truly missing.
+    meta = await getSheetMeta(true);
+    exists = meta.sheets?.some((s) => s.properties?.title === sheet);
+  }
   if (!exists) {
     await sheetsFetch(":batchUpdate", {
       method: "POST",
@@ -110,10 +134,16 @@ async function ensureSheetTab(sheet: SheetName) {
         requests: [{ addSheet: { properties: { title: sheet } } }],
       }),
     });
+    sheetMetaCache = null;
   }
 }
 
+// Once headers are confirmed correct for a sheet in this warm instance,
+// there's no need to re-read them before every single append.
+const headersVerified = new Set<SheetName>();
+
 export async function ensureHeaders(sheet: SheetName) {
+  if (headersVerified.has(sheet)) return;
   await ensureSheetTab(sheet);
   const data = await sheetsFetch(
     `/values/${encodeURIComponent(`${sheet}!1:1`)}`
@@ -135,6 +165,7 @@ export async function ensureHeaders(sheet: SheetName) {
       }
     );
   }
+  headersVerified.add(sheet);
 }
 
 export async function listRows(sheet: SheetName) {
@@ -186,11 +217,7 @@ export async function deleteRow(sheet: SheetName, id: string) {
   const rows = await listRows(sheet);
   const target = rows.find((r) => r.id === id);
   if (!target) throw new Error(`Row with id ${id} not found in ${sheet}`);
-  const meta = await sheetsFetch("");
-  const sheetMeta = meta.sheets?.find(
-    (s: { properties?: { title?: string } }) => s.properties?.title === sheet
-  );
-  const sheetId = sheetMeta?.properties?.sheetId;
+  const sheetId = await getSheetId(sheet);
   await sheetsFetch(":batchUpdate", {
     method: "POST",
     body: JSON.stringify({
