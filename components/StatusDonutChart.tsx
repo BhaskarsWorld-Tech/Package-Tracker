@@ -1,42 +1,33 @@
 "use client";
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { PieChart as PieChartIcon } from "lucide-react";
 
 export type DonutDatum = { name: string; value: number; color: string };
 
 export default function StatusDonutChart({ data }: { data: DonutDatum[] }) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   const nonZero = data.filter((d) => d.value > 0);
-
-  if (total === 0) {
-    return (
-      <div className="flex h-44 flex-col items-center justify-center gap-2 text-neutral-300">
-        <PieChartIcon size={28} />
-        <p className="text-sm text-neutral-400">No shipments yet.</p>
-      </div>
-    );
-  }
+  const ringData = nonZero.length
+    ? nonZero
+    : [{ name: "None", value: 1, color: "#e5e7eb" }];
 
   return (
-    <div className="flex items-center gap-6">
-      <div className="relative h-44 w-44 shrink-0">
+    <div className="flex flex-col items-center gap-5">
+      <div className="relative h-40 w-40 shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={nonZero.length ? nonZero : [{ name: "None", value: 1, color: "#e5e7eb" }]}
+              data={ringData}
               dataKey="value"
               nameKey="name"
-              innerRadius={55}
-              outerRadius={80}
+              innerRadius={50}
+              outerRadius={74}
               paddingAngle={nonZero.length > 1 ? 3 : 0}
               stroke="none"
             >
-              {(nonZero.length ? nonZero : [{ name: "None", value: 1, color: "#e5e7eb" }]).map(
-                (d, i) => (
-                  <Cell key={i} fill={d.color} />
-                )
-              )}
+              {ringData.map((d, i) => (
+                <Cell key={i} fill={d.color} />
+              ))}
             </Pie>
             {nonZero.length > 0 && (
               <Tooltip
@@ -54,15 +45,17 @@ export default function StatusDonutChart({ data }: { data: DonutDatum[] }) {
           <span className="text-xs text-neutral-400">Total</span>
         </div>
       </div>
-      <ul className="space-y-2.5 text-sm">
+      <ul className="w-full space-y-2.5 text-sm">
         {data.map((d) => (
-          <li key={d.name} className="flex items-center gap-2">
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: d.color }}
-            />
-            <span className="text-neutral-600">{d.name}</span>
-            <span className="ml-auto pl-4 font-medium text-neutral-900">
+          <li key={d.name} className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2 text-neutral-600">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: d.color }}
+              />
+              {d.name}
+            </span>
+            <span className="shrink-0 font-medium text-neutral-900">
               {d.value}
               <span className="ml-1 text-xs font-normal text-neutral-400">
                 ({total > 0 ? Math.round((d.value / total) * 100) : 0}%)
