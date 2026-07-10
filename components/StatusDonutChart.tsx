@@ -1,12 +1,22 @@
 "use client";
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart as PieChartIcon } from "lucide-react";
 
 export type DonutDatum = { name: string; value: number; color: string };
 
 export default function StatusDonutChart({ data }: { data: DonutDatum[] }) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   const nonZero = data.filter((d) => d.value > 0);
+
+  if (total === 0) {
+    return (
+      <div className="flex h-44 flex-col items-center justify-center gap-2 text-neutral-300">
+        <PieChartIcon size={28} />
+        <p className="text-sm text-neutral-400">No shipments yet.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-6">
