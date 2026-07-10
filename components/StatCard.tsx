@@ -33,11 +33,12 @@ export default function StatCard({
         </div>
       </div>
       <div
-        className={`mt-3 font-semibold tracking-tight text-neutral-900 ${
-          typeof value === "string" && value.includes("·")
+        className={`mt-3 truncate font-semibold tracking-tight text-neutral-900 ${
+          typeof value === "string" && value.length > 9
             ? "text-xl leading-tight"
             : "text-3xl"
         }`}
+        title={typeof value === "string" ? value : undefined}
       >
         {value}
       </div>

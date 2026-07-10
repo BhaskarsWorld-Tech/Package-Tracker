@@ -18,7 +18,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import StatCard from "@/components/StatCard";
 import TrendChart from "@/components/TrendChart";
 import StatusDonutChart from "@/components/StatusDonutChart";
-import { sumByCurrency, formatCurrencyTotals } from "@/lib/money";
+import { formatMoney, sumByCurrency, formatCurrencyTotals } from "@/lib/money";
 import { timeAgo, shortDate } from "@/lib/date";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -153,6 +153,40 @@ export default function Dashboard() {
     () =>
       leadTab === "All" ? leads : leads.filter((l) => l.status === leadTab),
     [leads, leadTab]
+  );
+
+  const paidPayments = useMemo(
+    () => payments.filter((p) => p.status === "Paid"),
+    [payments]
+  );
+  const pendingPayments = useMemo(
+    () => payments.filter((p) => p.status === "Pending" || p.status === "Partial"),
+    [payments]
+  );
+  const totalRevenueTotals = sumByCurrency(paidPayments);
+  const pendingTotals = sumByCurrency(pendingPayments);
+
+  const primaryCurrency = useMemo(() => {
+    const counts = sumByCurrency(payments.map((p) => ({ ...p, amount: "1" })));
+    const entries = Object.entries(counts);
+    return entries.sort((a, b) => b[1] - a[1])[0]?.[0] ?? "USD";
+  }, [payments]);
+
+  const revenueTrend = useMemo(() => {
+    const byDate = new Map<string, number>();
+    paidPayments
+      .filter((p) => p.currency === primaryCurrency)
+      .forEach((p) => {
+        byDate.set(p.date, (byDate.get(p.date) ?? 0) + (parseFloat(p.amount) || 0));
+      });
+    return [...byDate.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, amount]) => ({ label: shortDate(date), value: amount }));
+  }, [paidPayments, primaryCurrency]);
+
+  const recentPayments = useMemo(
+    () => [...payments].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
+    [payments]
   );
 
   if (error) {
@@ -348,6 +382,80 @@ export default function Dashboard() {
           </section>
         </div>
       </div>
+
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-neutral-900">Payments</h2>
+          <Link
+            href="/payments"
+            className="inline-flex items-center gap-1 text-sm font-medium text-accent-600 hover:text-accent-700"
+          >
+            View all <ArrowRight size={14} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-1 lg:grid-cols-1">
+            <div className="rounded-2xl bg-gradient-to-br from-accent-600 to-accent-700 p-5 text-white">
+              <div className="text-sm text-white/70">Total Revenue</div>
+              <div className="mt-1 text-2xl font-semibold">
+                {loading ? "—" : formatCurrencyTotals(totalRevenueTotals)}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-neutral-200/80 bg-white p-5">
+              <div className="text-sm text-neutral-500">Outstanding</div>
+              <div className="mt-1 text-2xl font-semibold text-neutral-900">
+                {loading ? "—" : formatCurrencyTotals(outstandingTotals)}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-neutral-200/80 bg-white p-5">
+              <div className="text-sm text-neutral-500">Pending</div>
+              <div className="mt-1 text-2xl font-semibold text-neutral-900">
+                {loading ? "—" : formatCurrencyTotals(pendingTotals)}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 lg:col-span-2">
+            <h3 className="mb-2 text-sm font-semibold text-neutral-900">
+              Recent Transactions
+            </h3>
+            <ul className="divide-y divide-neutral-100">
+              {recentPayments.length === 0 && (
+                <li className="py-8 text-center text-sm text-neutral-400">
+                  No payments yet.
+                </li>
+              )}
+              {recentPayments.map((p) => (
+                <li key={p.id} className="flex items-center justify-between py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-neutral-900">
+                      {p.customerName}
+                    </p>
+                    <p className="text-xs text-neutral-400">{p.date}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-neutral-900">
+                      {formatMoney(parseFloat(p.amount) || 0, p.currency)}
+                    </p>
+                    <StatusBadge status={p.status} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 lg:col-span-1">
+            <h3 className="mb-2 text-sm font-semibold text-neutral-900">
+              Revenue Trend {revenueTrend.length > 0 && `(${primaryCurrency})`}
+            </h3>
+            <TrendChart
+              data={revenueTrend}
+              color="#10b981"
+              valuePrefix={primaryCurrency === "INR" ? "₹" : "$"}
+            />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
