@@ -2,13 +2,18 @@ import { NextRequest } from "next/server";
 import { randomUUID } from "crypto";
 import { listRows, appendRow } from "@/lib/sheets";
 import { withErrorHandling } from "@/lib/api";
+import { requireSession } from "@/lib/auth";
 
-export async function GET() {
-  return withErrorHandling(() => listRows("Packages"));
+export async function GET(req: NextRequest) {
+  return withErrorHandling(async () => {
+    await requireSession(req);
+    return listRows("Packages");
+  });
 }
 
 export async function POST(req: NextRequest) {
   return withErrorHandling(async () => {
+    await requireSession(req);
     const body = await req.json();
     const id = randomUUID();
     await appendRow("Packages", {

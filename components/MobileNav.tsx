@@ -1,8 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Package, CreditCard, Truck, Ship } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Users,
+  Package,
+  CreditCard,
+  Truck,
+  Ship,
+  LogOut,
+} from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -14,14 +22,29 @@ const NAV = [
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <div className="md:hidden sticky top-0 z-20 bg-white border-b border-neutral-200/80">
-      <div className="flex items-center gap-2 px-4 h-14">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent-500 to-accent-700 text-white">
-          <Ship size={15} strokeWidth={2.25} />
+      <div className="flex items-center justify-between px-4 h-14">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent-500 to-accent-700 text-white">
+            <Ship size={15} strokeWidth={2.25} />
+          </div>
+          <span className="font-semibold text-neutral-900 text-sm">Package Tracker</span>
         </div>
-        <span className="font-semibold text-neutral-900 text-sm">Package Tracker</span>
+        <button
+          onClick={handleLogout}
+          className="rounded-lg p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+        >
+          <LogOut size={16} strokeWidth={2} />
+        </button>
       </div>
       <nav className="flex gap-1 px-2 pb-2 overflow-x-auto">
         {NAV.map((item) => {

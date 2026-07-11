@@ -41,6 +41,10 @@ Fill in from the downloaded JSON key file:
 - `GOOGLE_SHEET_ID` — the Sheet ID from step 1
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL` — the `client_email` field in the JSON key
 - `GOOGLE_PRIVATE_KEY` — the `private_key` field in the JSON key, wrapped in quotes exactly as downloaded (keep the `\n` sequences)
+- `SESSION_SECRET` — a random string used to sign login session cookies. Generate one with:
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+  ```
 
 ## 5. Run it
 
@@ -49,7 +53,9 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. The Dashboard shows active leads, in-transit packages, and outstanding payments; use the Leads / Packages / Payments tabs to add and update records — everything is saved straight to your Google Sheet.
+Open http://localhost:3000 — you'll land on a login screen. Click **Sign up** to create the first account (email + password, stored as a salted hash in a new `Users` tab that gets created automatically in your Sheet). Every page requires being logged in.
+
+The Dashboard shows active leads, in-transit packages, and outstanding payments; use the Leads / Packages / Payments tabs to add and update records — everything is saved straight to your Google Sheet.
 
 ## 6. Deploy to Cloudflare
 
@@ -61,6 +67,7 @@ This app deploys to Cloudflare Workers via [OpenNext](https://opennext.js.org/cl
    npx wrangler secret put GOOGLE_SHEET_ID
    npx wrangler secret put GOOGLE_SERVICE_ACCOUNT_EMAIL
    npx wrangler secret put GOOGLE_PRIVATE_KEY
+   npx wrangler secret put SESSION_SECRET
    ```
 3. Deploy:
    ```bash
