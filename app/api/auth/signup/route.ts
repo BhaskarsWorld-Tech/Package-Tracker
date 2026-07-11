@@ -29,6 +29,11 @@ export async function POST(req: NextRequest) {
 
     const { hash, salt } = await hashPassword(password);
     const id = randomUUID();
+    // Mint the session token before writing anything — if SESSION_SECRET is
+    // misconfigured this throws here instead of leaving an orphaned user
+    // row with no way to complete signup.
+    const token = await createSessionToken(id, normalizedEmail);
+
     await appendRow("Users", {
       id,
       email: normalizedEmail,
@@ -37,7 +42,6 @@ export async function POST(req: NextRequest) {
       createdAt: new Date().toISOString(),
     });
 
-    const token = await createSessionToken(id, normalizedEmail);
     const res = NextResponse.json({ ok: true, email: normalizedEmail });
     res.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
