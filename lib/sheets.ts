@@ -77,7 +77,7 @@ export const SHEETS = {
     "date",
     "notes",
   ],
-  Users: ["id", "email", "passwordHash", "passwordSalt", "createdAt"],
+  Users: ["id", "email", "passwordHash", "passwordSalt", "role", "createdAt"],
 } as const;
 
 export type SheetName = keyof typeof SHEETS;

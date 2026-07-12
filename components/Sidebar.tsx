@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -12,6 +11,7 @@ import {
   Ship,
   LogOut,
 } from "lucide-react";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -24,14 +24,7 @@ const NAV = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [email, setEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setEmail(data?.email ?? null))
-      .catch(() => setEmail(null));
-  }, []);
+  const { email, role } = useCurrentUser();
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -75,7 +68,20 @@ export default function Sidebar() {
       </nav>
       <div className="px-3 py-4 border-t border-white/10">
         {email && (
-          <p className="truncate px-3 pb-2 text-xs text-white/40">{email}</p>
+          <div className="px-3 pb-2">
+            <p className="truncate text-xs text-white/40">{email}</p>
+            {role && (
+              <span
+                className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+                  role === "admin"
+                    ? "bg-accent-500/20 text-accent-300"
+                    : "bg-white/10 text-white/50"
+                }`}
+              >
+                {role}
+              </span>
+            )}
+          </div>
         )}
         <button
           onClick={handleLogout}

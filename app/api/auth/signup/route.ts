@@ -4,6 +4,7 @@ import { listRows, appendRow } from "@/lib/sheets";
 import {
   hashPassword,
   createSessionToken,
+  resolveRole,
   SESSION_COOKIE,
   SESSION_COOKIE_MAX_AGE,
 } from "@/lib/auth";
@@ -29,20 +30,24 @@ export async function POST(req: NextRequest) {
 
     const { hash, salt } = await hashPassword(password);
     const id = randomUUID();
+    // Role is derived from ADMIN_EMAIL, never taken from client input — a
+    // signup can never grant itself admin.
+    const role = resolveRole(normalizedEmail);
     // Mint the session token before writing anything — if SESSION_SECRET is
     // misconfigured this throws here instead of leaving an orphaned user
     // row with no way to complete signup.
-    const token = await createSessionToken(id, normalizedEmail);
+    const token = await createSessionToken(id, normalizedEmail, role);
 
     await appendRow("Users", {
       id,
       email: normalizedEmail,
       passwordHash: hash,
       passwordSalt: salt,
+      role,
       createdAt: new Date().toISOString(),
     });
 
-    const res = NextResponse.json({ ok: true, email: normalizedEmail });
+    const res = NextResponse.json({ ok: true, email: normalizedEmail, role });
     res.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
       secure: true,

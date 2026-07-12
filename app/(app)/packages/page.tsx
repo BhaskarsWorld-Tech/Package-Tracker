@@ -8,6 +8,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import Modal from "@/components/Modal";
 import { Input, Label, Select, Textarea } from "@/components/FormField";
 import { formatMoney } from "@/lib/money";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const STATUSES = ["Pending Pickup", "In Transit", "Customs", "Delivered"];
 const ROUTES = ["India → USA", "USA → India"];
@@ -31,6 +32,7 @@ const emptyForm = {
 };
 
 export default function PackagesPage() {
+  const { isAdmin } = useCurrentUser();
   const [packages, setPackages] = useState<Package[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -433,12 +435,14 @@ export default function PackagesPage() {
                     {pkg.expectedDelivery || "—"}
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <button
-                      onClick={() => remove(pkg.id)}
-                      className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => remove(pkg.id)}
+                        className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

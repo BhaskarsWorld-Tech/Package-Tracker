@@ -3,6 +3,7 @@ import { listRows } from "@/lib/sheets";
 import {
   verifyPassword,
   createSessionToken,
+  resolveRole,
   SESSION_COOKIE,
   SESSION_COOKIE_MAX_AGE,
 } from "@/lib/auth";
@@ -39,8 +40,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const token = await createSessionToken(user.id, normalizedEmail);
-    const res = NextResponse.json({ ok: true, email: normalizedEmail });
+    // Role is recomputed from ADMIN_EMAIL on every login, not trusted from
+    // the stored row — so the designated admin stays admin even if their
+    // account was created before ADMIN_EMAIL existed, and nobody can grant
+    // themselves admin by editing the Sheet's role column directly.
+    const role = resolveRole(normalizedEmail);
+    const token = await createSessionToken(user.id, normalizedEmail, role);
+    const res = NextResponse.json({ ok: true, email: normalizedEmail, role });
     res.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
       secure: true,

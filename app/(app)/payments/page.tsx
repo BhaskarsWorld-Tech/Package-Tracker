@@ -11,6 +11,7 @@ import TrendChart from "@/components/TrendChart";
 import { Input, Label, Select, Textarea } from "@/components/FormField";
 import { formatMoney, sumByCurrency, formatCurrencyTotals } from "@/lib/money";
 import { shortDate } from "@/lib/date";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const STATUSES = ["Pending", "Paid", "Partial", "Refunded"];
 const METHODS = ["Cash", "Bank Transfer", "UPI", "Zelle", "Card", "Other"];
@@ -29,6 +30,7 @@ const emptyForm = {
 };
 
 export default function PaymentsPage() {
+  const { isAdmin } = useCurrentUser();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
@@ -516,12 +518,14 @@ export default function PaymentsPage() {
                           {p.notes}
                         </td>
                         <td className="px-5 py-3 text-right">
-                          <button
-                            onClick={() => remove(p.id)}
-                            className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => remove(p.id)}
+                              className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

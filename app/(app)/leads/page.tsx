@@ -7,6 +7,7 @@ import StatusBadge from "@/components/StatusBadge";
 import ErrorBanner from "@/components/ErrorBanner";
 import Modal from "@/components/Modal";
 import { Input, Label, Select, Textarea } from "@/components/FormField";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const STATUSES = ["New", "Contacted", "Quoted", "Converted", "Lost"];
 const ROUTES = ["India → USA", "USA → India"];
@@ -26,6 +27,7 @@ const emptyForm = {
 };
 
 export default function LeadsPage() {
+  const { isAdmin } = useCurrentUser();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -351,12 +353,14 @@ export default function LeadsPage() {
                       >
                         <Pencil size={15} />
                       </button>
-                      <button
-                        onClick={() => remove(lead.id)}
-                        className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => remove(lead.id)}
+                          className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -2,7 +2,18 @@
 // Crypto — runs identically under Node.js and the Cloudflare Workers runtime,
 // same approach as the Google service-account JWT signing in lib/google-auth.ts.
 
-import { AuthError } from "@/lib/api";
+import { AuthError, ForbiddenError } from "@/lib/api";
+
+export type Role = "admin" | "user";
+
+// The sole admin account is whichever email is configured here — never
+// something a signup can grant itself, and never trusted from a stored
+// "role" value someone could edit directly in the Sheet. Role is always
+// recomputed from this at signup/login time.
+export function resolveRole(email: string): Role {
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  return adminEmail && email.toLowerCase() === adminEmail ? "admin" : "user";
+}
 
 const PBKDF2_ITERATIONS = 100_000;
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
@@ -86,12 +97,22 @@ async function hmacKey() {
   );
 }
 
-export type SessionPayload = { sub: string; email: string; exp: number };
+export type SessionPayload = {
+  sub: string;
+  email: string;
+  role: Role;
+  exp: number;
+};
 
-export async function createSessionToken(userId: string, email: string) {
+export async function createSessionToken(
+  userId: string,
+  email: string,
+  role: Role
+) {
   const payload: SessionPayload = {
     sub: userId,
     email,
+    role,
     exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS,
   };
   const encoder = new TextEncoder();
@@ -145,5 +166,18 @@ export async function requireSession(req: {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = await verifySessionToken(token);
   if (!session) throw new AuthError("Not authenticated");
+  return session;
+}
+
+// Same as requireSession, but also requires the admin role — throws a 403
+// (not 401) if logged in but not an admin, since the distinction matters
+// to the client (re-login won't help; this account just isn't allowed).
+export async function requireAdmin(req: {
+  cookies: { get(name: string): { value: string } | undefined };
+}) {
+  const session = await requireSession(req);
+  if (session.role !== "admin") {
+    throw new ForbiddenError("Only an admin can do this.");
+  }
   return session;
 }

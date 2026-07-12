@@ -9,6 +9,7 @@ import Modal from "@/components/Modal";
 import StatCard from "@/components/StatCard";
 import { Input, Label, Select, Textarea } from "@/components/FormField";
 import { formatMoney, sumByCurrency, formatCurrencyTotals } from "@/lib/money";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const CUSTOMER_PAYMENT_STATUSES = ["Pending", "Paid", "Partial"];
 const PAYMENT_SOURCES = ["Cash", "Bank Transfer", "UPI", "Zelle", "Card", "Other"];
@@ -29,6 +30,7 @@ const emptyForm = {
 };
 
 export default function CourierPaymentsPage() {
+  const { isAdmin } = useCurrentUser();
   const [entries, setEntries] = useState<CourierPayment[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
@@ -393,12 +395,14 @@ export default function CourierPaymentsPage() {
                     </div>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <button
-                      onClick={() => remove(e.id)}
-                      className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => remove(e.id)}
+                        className="rounded-md p-1.5 text-neutral-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
