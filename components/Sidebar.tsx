@@ -10,6 +10,7 @@ import {
   Truck,
   Ship,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
@@ -21,10 +22,12 @@ const NAV = [
   { href: "/courier-payments", label: "Courier Payments", icon: Truck },
 ];
 
+const ADMIN_NAV = [{ href: "/users", label: "Users", icon: ShieldCheck }];
+
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { email, role } = useCurrentUser();
+  const { email, role, isAdmin } = useCurrentUser();
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -65,6 +68,25 @@ export default function Sidebar() {
             </Link>
           );
         })}
+        {isAdmin &&
+          ADMIN_NAV.map((item) => {
+            const active = pathname.startsWith(item.href);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-accent-600 text-white shadow-sm shadow-accent-900/30"
+                    : "text-white/60 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <Icon size={17} strokeWidth={2} />
+                {item.label}
+              </Link>
+            );
+          })}
       </nav>
       <div className="px-3 py-4 border-t border-white/10">
         {email && (

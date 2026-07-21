@@ -10,7 +10,9 @@ import {
   Truck,
   Ship,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -20,9 +22,12 @@ const NAV = [
   { href: "/courier-payments", label: "Courier Payments", icon: Truck },
 ];
 
+const ADMIN_NAV = [{ href: "/users", label: "Users", icon: ShieldCheck }];
+
 export default function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { isAdmin } = useCurrentUser();
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -66,6 +71,25 @@ export default function MobileNav() {
             </Link>
           );
         })}
+        {isAdmin &&
+          ADMIN_NAV.map((item) => {
+            const active = pathname.startsWith(item.href);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-accent-50 text-accent-700"
+                    : "text-neutral-500 hover:bg-neutral-100"
+                }`}
+              >
+                <Icon size={15} strokeWidth={2} />
+                {item.label}
+              </Link>
+            );
+          })}
       </nav>
     </div>
   );
